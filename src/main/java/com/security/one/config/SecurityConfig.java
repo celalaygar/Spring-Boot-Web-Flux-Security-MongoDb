@@ -1,5 +1,7 @@
 package com.security.one.config;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,19 +22,17 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableWebFluxSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final ReactiveUserDetailsService userDetailsService;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
     private final JWTProvider jwtProvider;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
-    public SecurityConfig(ReactiveUserDetailsService userDetailsService,
-                          JWTAuthenticationFilter jwtAuthenticationFilter,
-                          JWTProvider jwtProvider) {
-        this.userDetailsService = userDetailsService;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.jwtProvider = jwtProvider;
-    }
+
+
+// SecurityConfig.java
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -48,9 +48,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .authenticationManager(reactiveAuthenticationManager())
-                // ✅ Custom repository kullanılıyor
-                .securityContextRepository(securityContextRepository()) // 👈 Bu satır önemli
+                .securityContextRepository(securityContextRepository())
+                .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint)) // ✅ Bu var
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION);
 
         return http.build();

@@ -19,7 +19,7 @@ public class JWTProvider {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    @Value("${jwt.expiration:11}") // 24h
+    @Value("${jwt.expiration:1}") // 24h
     private Long EXPIRATION;
 
     private SecretKey SECRET_KEY;
@@ -65,17 +65,24 @@ public class JWTProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token);
+            Jwts.parser()
+                    .verifyWith(SECRET_KEY)
+                    .build()
+                    .parseSignedClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            return false;
+            throw new ExpiredJwtException(e.getHeader(), e.getClaims(), "Token expired");
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
     public boolean isTokenExpired(String token) {
-        final Date expiration = getClaimFromToken(token, Claims::getExpiration);
-        return expiration.before(new Date());
+        try {
+            final Date expiration = getClaimFromToken(token, Claims::getExpiration);
+            return expiration.before(new Date());
+        } catch (Exception e) {
+            return true;
+        }
     }
 }

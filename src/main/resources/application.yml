@@ -50,7 +50,7 @@ springdoc:
 
 jwt:
   secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg5"
-  expiredDay: 5
+  expiredDay: 86400000
   invitation-secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg4"
   invitation-expiredDay: 900000
   email-change-secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg3"

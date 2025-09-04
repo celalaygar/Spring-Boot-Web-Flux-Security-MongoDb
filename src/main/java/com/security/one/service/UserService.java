@@ -4,6 +4,7 @@ package com.security.one.service;
 import com.security.one.dto.UserResponse;
 import com.security.one.entity.User;
 import com.security.one.repository.UserRepository;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -17,9 +18,8 @@ public class UserService {
     }
 
     public Mono<UserResponse> getCurrentUser(String email) {
-        return userRepository.findByEmail(email)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
-                .map(this::toUserResponse);
+
+        return  getAuthUser().map(this::toUserResponse);
     }
 
     private UserResponse toUserResponse(User user) {
@@ -33,5 +33,14 @@ public class UserService {
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
         return response;
+    }
+
+    public Mono<User> getAuthUser() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> {
+                    String email = securityContext.getAuthentication().getName();
+                    return userRepository.findByEmail(email); // Bu, Mono<User> döndürüyor
+                })
+                .flatMap(userMono -> userMono); // Mono<User> döndürüyor
     }
 }

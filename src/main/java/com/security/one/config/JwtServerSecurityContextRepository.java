@@ -5,6 +5,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -30,12 +31,10 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 
     @Override
     public Mono<SecurityContext> load(ServerWebExchange exchange) {
-        String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String token = exchange.getRequest().getHeaders().getFirst("Authorization");
+        if (ObjectUtils.isEmpty(token)) {
             return Mono.empty();
         }
-
-        String token = authHeader.substring(7);
         String email;
         try {
             email = jwtProvider.getEmailFromToken(token);

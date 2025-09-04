@@ -1,6 +1,7 @@
 package com.security.one.config;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -8,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
@@ -29,35 +31,51 @@ public class JWTAuthenticationFilter implements org.springframework.web.server.W
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-        // 🔴 Durum 1: Token yok → 401 (flag: false)
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 🔴 Durum 1: Token yok
+        if (ObjectUtils.isEmpty(token)) {
+            exchange.getAttributes().put("tokenExpired", false);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return chain.filter(exchange); // Bu, authenticationEntryPoint'e düşer
+            return chain.filter(exchange);
         }
 
-        String token = authHeader.substring(7);
-
-        // Token var ama validate edilemiyorsa
+        // 🔍 Durum 2: Token var → validate et
         return Mono.fromCallable(() -> {
-                    jwtProvider.validateToken(token); // Bu, expired'da hata fırlatır
+                    if (!jwtProvider.validateToken(token)) {
+                        throw new IllegalArgumentException("Invalid token");
+                    }
                     return token;
                 })
                 .onErrorResume(ExpiredJwtException.class, ex -> {
-                    // 🟡 Durum 2: Token expired → 401 (flag: true)
+                    // 🟡 Expired token
                     exchange.getAttributes().put("tokenExpired", true);
                     exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                     return Mono.empty();
                 })
+                .onErrorResume(JwtException.class, ex -> {
+                    // 🔴 Malformed, unsupported, illegal arg vs.
+                    exchange.getAttributes().put("tokenExpired", false);
+                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                    return Mono.empty();
+                })
                 .onErrorResume(Exception.class, ex -> {
-                    // 🔴 Durum 3: Geçersiz token → 401 (flag: false)
+                    // 🔴 Diğer tüm hatalar (genel koruma)
                     exchange.getAttributes().put("tokenExpired", false);
                     exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                     return Mono.empty();
                 })
                 .flatMap(validToken -> {
-                    String email = jwtProvider.getEmailFromToken(token);
+                    // ✅ Token valid → email al
+                    String email;
+                    try {
+                        email = jwtProvider.getEmailFromToken(token);
+                    } catch (Exception e) {
+                        exchange.getAttributes().put("tokenExpired", false);
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return Mono.empty();
+                    }
+
                     return userDetailsService.findByUsername(email)
                             .switchIfEmpty(Mono.defer(() -> {
                                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -71,6 +89,6 @@ public class JWTAuthenticationFilter implements org.springframework.web.server.W
                                         .then(chain.filter(exchange));
                             });
                 })
-                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange))); // 401 set edildi, chain çalışır
+                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange)));
     }
 }

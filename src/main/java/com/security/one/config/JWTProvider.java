@@ -19,7 +19,7 @@ public class JWTProvider {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    @Value("${jwt.expiration:1}") // 24h
+    @Value("${jwt.expiration:86400000}") // 24h
     private Long EXPIRATION;
 
     private SecretKey SECRET_KEY;
@@ -40,9 +40,12 @@ public class JWTProvider {
     }
 
     public String getEmailFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+        try {
+            return getClaimFromToken(token, Claims::getSubject);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid JWT token", e);
+        }
     }
-
     public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token) {
         List<String> roles = getClaimFromToken(token, claims -> (List<String>) claims.get("roles"));
         return roles.stream()

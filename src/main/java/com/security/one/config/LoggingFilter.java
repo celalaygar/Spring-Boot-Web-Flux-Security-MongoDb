@@ -36,7 +36,7 @@ public class LoggingFilter implements WebFilter {
 
         String method = request.getMethod().name();
         String requestHeaders = request.getHeaders().toString();
-        String token = extractToken(request);
+        String token = request.getHeaders().getFirst("Authorization");
         String email = extractEmailFromToken(token);
 
         return DataBufUtils.readRequestBody(exchange)

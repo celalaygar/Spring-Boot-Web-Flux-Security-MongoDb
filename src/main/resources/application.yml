@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+
+
+spring:
+  application:
+    name: job.ts.be.v2
+  data:
+    mongodb:
+      uri: mongodb://root11:371root1124@localhost:27017/one?authSource=admin
+  servlet:
+    multipart:
+      enabled:true
+      max-file-size:50MB
+      max-request-size:100MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: aygarcelalx@gmail.com
+    password: jcvc drer cyfs gdia
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: "*" # Tüm sertifikalara güvenmek için (Sadece geliştirme ortamı için önerilir)
+
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              ReactiveMongoTemplate: DEBUG
+              MongoTemplate: DEBUG
+      mongodb:
+        driver:
+          protocol:
+            command: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+jwt:
+  secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg5"
+  expiredDay: 5
+  invitation-secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg4"
+  invitation-expiredDay: 900000
+  email-change-secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg3"
+  email-change-expiredDay: 900000
+  password-reset-secret: "QWx3YXlzLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itam90LTUxMi1zZWN1cml0eS0xMjM0NTY3ODkwMTIzNDU2Nzg6"
+  password-reset-expiredDay: 900000
+
+frontend:
+  url: "http://localhost:5173/"
+
+email-change:
+  cooldown-seconds: 60
+  code-validity-minutes: 10
+  token-validity-minutes: 15
+
+
+password-reset:
+  cooldown-seconds: 120
+  token-validity-minutes: 15
